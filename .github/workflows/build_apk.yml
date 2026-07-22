@@ -28,39 +28,39 @@ jobs:
             echo "Appending config to build.gradle.kts"
             cat >> android/app/build.gradle.kts << 'EOF'
 
-android {
-    compileSdk = 35
-    defaultConfig {
-        targetSdk = 34
-    }
-    compileOptions {
-        isCoreLibraryDesugaringEnabled = true
-    }
-}
+          android {
+              compileSdk = 35
+              defaultConfig {
+                  targetSdk = 34
+              }
+              compileOptions {
+                  isCoreLibraryDesugaringEnabled = true
+              }
+          }
 
-dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
-}
-EOF
+          dependencies {
+              coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+          }
+          EOF
             cat android/app/build.gradle.kts
           elif [ -f android/app/build.gradle ]; then
             echo "Appending config to build.gradle"
             cat >> android/app/build.gradle << 'EOF'
 
-android {
-    compileSdkVersion 35
-    defaultConfig {
-        targetSdkVersion 34
-    }
-    compileOptions {
-        coreLibraryDesugaringEnabled true
-    }
-}
+          android {
+              compileSdkVersion 35
+              defaultConfig {
+                  targetSdkVersion 34
+              }
+              compileOptions {
+                  coreLibraryDesugaringEnabled true
+              }
+          }
 
-dependencies {
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
-}
-EOF
+          dependencies {
+              coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+          }
+          EOF
             cat android/app/build.gradle
           else
             echo "No app-level Gradle file found, skipping patch"
