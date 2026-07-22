@@ -112,6 +112,8 @@ class NotificationService implements NotificationScheduler {
           ),
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
         payload: reminder.id,
       );
     } catch (e) {
@@ -166,6 +168,8 @@ class NotificationService implements NotificationScheduler {
           ),
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
         payload: reminder.id,
       );
     } catch (e) {
