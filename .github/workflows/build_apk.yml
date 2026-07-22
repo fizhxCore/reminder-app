@@ -15,6 +15,9 @@ jobs:
         with:
           channel: stable
 
+      - name: Scaffold missing Android platform files
+        run: flutter create . --platforms=android --org com.yiwa.reminder --project-name reminder_app
+
       - name: Install dependencies
         run: flutter pub get
 
