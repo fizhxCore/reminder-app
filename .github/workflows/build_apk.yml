@@ -18,6 +18,40 @@ jobs:
       - name: Scaffold missing Android platform files
         run: flutter create . --platforms=android --org com.yiwa.reminder --project-name reminder_app
 
+      - name: Remove conflicting default widget test
+        run: rm -f test/widget_test.dart
+
+      - name: Patch Android Gradle config (core library desugaring + compileSdk/targetSdk)
+        run: |
+          set -e
+          FILE=""
+          if [ -f android/app/build.gradle.kts ]; then
+            FILE="android/app/build.gradle.kts"
+          elif [ -f android/app/build.gradle ]; then
+            FILE="android/app/build.gradle"
+          fi
+          if [ -z "$FILE" ]; then
+            echo "No app-level Gradle file found, skipping patch"
+            exit 0
+          fi
+          echo "Patching $FILE"
+          if [[ "$FILE" == *.kts ]]; then
+            grep -q "isCoreLibraryDesugaringEnabled" "$FILE" || \
+              sed -i '/compileOptions {/a\        isCoreLibraryDesugaringEnabled = true' "$FILE"
+            grep -q "desugar_jdk_libs" "$FILE" || \
+              sed -i '/^dependencies {/a\    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")' "$FILE"
+            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/' "$FILE"
+            sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 34/' "$FILE"
+          else
+            grep -q "coreLibraryDesugaringEnabled" "$FILE" || \
+              sed -i '/compileOptions {/a\        coreLibraryDesugaringEnabled true' "$FILE"
+            grep -q "desugar_jdk_libs" "$FILE" || \
+              sed -i '/^dependencies {/a\    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.4"' "$FILE"
+            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 35/' "$FILE"
+            sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/' "$FILE"
+          fi
+          cat "$FILE"
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -29,7 +63,14 @@ jobs:
         continue-on-error: true
 
       - name: Build APK (release)
-        run: flutter build apk --release
+        run: flutter build apk --release --verbose 2>&1 | tee gradle_build.log
+
+      - name: Upload build log (always, for diagnosis)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: gradle_build.log
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
