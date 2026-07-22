@@ -21,36 +21,50 @@ jobs:
       - name: Remove conflicting default widget test
         run: rm -f test/widget_test.dart
 
-      - name: Patch Android Gradle config (core library desugaring + compileSdk/targetSdk)
+      - name: Patch Android Gradle config (desugaring + compileSdk/targetSdk)
         run: |
           set -e
-          FILE=""
           if [ -f android/app/build.gradle.kts ]; then
-            FILE="android/app/build.gradle.kts"
+            echo "Appending config to build.gradle.kts"
+            cat >> android/app/build.gradle.kts << 'EOF'
+
+android {
+    compileSdk = 35
+    defaultConfig {
+        targetSdk = 34
+    }
+    compileOptions {
+        isCoreLibraryDesugaringEnabled = true
+    }
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+}
+EOF
+            cat android/app/build.gradle.kts
           elif [ -f android/app/build.gradle ]; then
-            FILE="android/app/build.gradle"
-          fi
-          if [ -z "$FILE" ]; then
-            echo "No app-level Gradle file found, skipping patch"
-            exit 0
-          fi
-          echo "Patching $FILE"
-          if [[ "$FILE" == *.kts ]]; then
-            grep -q "isCoreLibraryDesugaringEnabled" "$FILE" || \
-              sed -i '/compileOptions {/a\        isCoreLibraryDesugaringEnabled = true' "$FILE"
-            grep -q "desugar_jdk_libs" "$FILE" || \
-              sed -i '/^dependencies {/a\    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")' "$FILE"
-            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/' "$FILE"
-            sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 34/' "$FILE"
+            echo "Appending config to build.gradle"
+            cat >> android/app/build.gradle << 'EOF'
+
+android {
+    compileSdkVersion 35
+    defaultConfig {
+        targetSdkVersion 34
+    }
+    compileOptions {
+        coreLibraryDesugaringEnabled true
+    }
+}
+
+dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+}
+EOF
+            cat android/app/build.gradle
           else
-            grep -q "coreLibraryDesugaringEnabled" "$FILE" || \
-              sed -i '/compileOptions {/a\        coreLibraryDesugaringEnabled true' "$FILE"
-            grep -q "desugar_jdk_libs" "$FILE" || \
-              sed -i '/^dependencies {/a\    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.4"' "$FILE"
-            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 35/' "$FILE"
-            sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/' "$FILE"
+            echo "No app-level Gradle file found, skipping patch"
           fi
-          cat "$FILE"
 
       - name: Install dependencies
         run: flutter pub get
